@@ -1,0 +1,17 @@
+# Compiled binaries and libraries
+nbody
+*.so
+*.o
+*.a
+*.out
+
+# Intermediate output and timing log files
+output.csv
+time_output.txt
+simulation_time.txt
+
+# Environment/system temporary files
+.DS_Store
+__pycache__/
+*.pyc
+*~

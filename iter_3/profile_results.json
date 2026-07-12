@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "elapsed_time": 0.08,
+  "cpu_time": 0.07,
+  "max_rss_kb": 3980,
+  "initial_energy": -0.014705211518690076,
+  "final_energy": -0.014705211518789842,
+  "energy_drift": 9.976568182690215e-14,
+  "error": null
+}
