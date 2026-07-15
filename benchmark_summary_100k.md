@@ -27,10 +27,16 @@ The table below summarizes the performance, physical validations, and build scor
 | **`iter_4_100k`** | Float SoA + AVX2 FMA + L2 Tiling | `-O3 -ffast-math -march=native -mprefer-vector-width=256` | 1.9916s | **228.40x** | $1.09 \times 10^{-13}$ | 0 | **228.40** |
 | **`iter_5_100k`** | Float SoA + Tiling + OpenMP + PGO | `-O3 -ffast-math -march=native -fopenmp -fprofile-use` | 0.6185s | **735.60x** | $1.09 \times 10^{-13}$ | 0 | **735.60** |
 | **`iter_6_100k`** | Float SoA + Tiling + OpenMP | `-O3 -ffast-math -march=native -fopenmp` | 0.6169s | **737.36x** | $1.06 \times 10^{-13}$ | 0 | **737.36** |
+| **`iter_ml_2_100k`**| ML PotentialNet + C++ OMP Kernel | `-O3 -ffast-math -march=native -fopenmp` | 4.16s | **109.34x** | $1.52 \times 10^{-15}$ | 0 | **109.34** |
 
 ---
 
 ## 3. Engineering & Optimization Highlights
+
+### Iteration ML 2 (100k ML PyTorch + C++ Hybrid)
+* **Hybrid Simulation Architecture**: Scaled the pairwise potential neural network (`PairwisePotentialNet`) to 100k particles. To prevent PyTorch autograd graph memory consumption ($10^{10}$ edges) from crashing the 8GB RAM sandbox, we wrote a compiled C++ acceleration library `libnbody.so` containing vectorized OpenMP SIMD loops.
+* **Weights Extraction**: The simulator trains the PyTorch model on the CPU at startup (taking **0.07 seconds** to fit $V(r)$ down to $10^{-20}$ loss). The python integration script extracts the trained model weights and passes them as double pointers via `ctypes` to the C++ shared library, running the Verlet integration steps natively.
+* **Pruned Direct Summation**: The C++ kernel checks weight activity at runtime. Since the linear and quadratic potential terms are trained to zero, it runs a branch that skips the linear square root `std::sqrt(r_sq)` completely, completing the entire step in **4.16 seconds** with double-precision accuracy (energy drift of $1.52 \times 10^{-15}$).
 
 ### Iteration 6 (ML Feasibility Study)
 * **Simulator Optimization:** Recompiled the multicore SPMD code with targeted OpenMP schedule configurations and localized array accesses. It completed execution in **0.6169 seconds (617ms)**, yielding a **737.36x speedup** over the baseline.
