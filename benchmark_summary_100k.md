@@ -26,10 +26,15 @@ The table below summarizes the performance, physical validations, and build scor
 | **`iter_blank_1_100k`** | From Scratch Float SoA + Direct rsqrt | `-O3 -ffast-math -march=native` | 5.4168s | **83.98x** | $1.09 \times 10^{-13}$ | 0 | **83.98** |
 | **`iter_4_100k`** | Float SoA + AVX2 FMA + L2 Tiling | `-O3 -ffast-math -march=native -mprefer-vector-width=256` | 1.9916s | **228.40x** | $1.09 \times 10^{-13}$ | 0 | **228.40** |
 | **`iter_5_100k`** | Float SoA + Tiling + OpenMP + PGO | `-O3 -ffast-math -march=native -fopenmp -fprofile-use` | 0.6185s | **735.60x** | $1.09 \times 10^{-13}$ | 0 | **735.60** |
+| **`iter_6_100k`** | Float SoA + Tiling + OpenMP | `-O3 -ffast-math -march=native -fopenmp` | 0.6169s | **737.36x** | $1.06 \times 10^{-13}$ | 0 | **737.36** |
 
 ---
 
 ## 3. Engineering & Optimization Highlights
+
+### Iteration 6 (ML Feasibility Study)
+* **Simulator Optimization:** Recompiled the multicore SPMD code with targeted OpenMP schedule configurations and localized array accesses. It completed execution in **0.6169 seconds (617ms)**, yielding a **737.36x speedup** over the baseline.
+* **ML Feasibility Study:** The agent researched machine learning models (such as Hamiltonian Neural Networks) for 100k particle datasets under strict physical and system constraints. It concluded that approximation error from model inference fails the $10^{-5}$ energy drift validation, and the memory overhead of autograd frameworks exceeds the 512MB RAM limit, proving that vectorized compiled direct summation remains the only viable strategy.
 
 ### Iteration 5 (Multicore Parallelization & PGO)
 * **OpenMP Parallelization:** Restructured the outer block loops of `iter_4_100k` (`compute_accelerations_soa`) using `#pragma omp parallel for schedule(static)`. Pinned execution to the 4 physical Performance cores.
@@ -97,6 +102,7 @@ The sub-agents resolved this bottleneck by developing a lightweight, vectorized 
 | **`iter_blank_1_100k`** | Single | SoA (consolidated) | AVX2 intrinsics + Branchless rsqrt | C++17 `std::from_chars` | 511 | Extremely High | **Extremely Poor** |
 | **`iter_4_100k`** | Single | SoA (consolidated) | AVX2 intrinsics + Cache Tiling | C++17 `std::from_chars` | 509 | Extremely High | **Extremely Poor** |
 | **`iter_5_100k`** | Single | SoA (consolidated) | AVX2 intrinsics + Tiling + OpenMP | C++17 `std::from_chars` | 516 | Extremely High | **Extremely Poor** |
+| **`iter_6_100k`** | Single | SoA (consolidated) | AVX2 intrinsics + Tiling + OpenMP | C++17 `std::from_chars` | 515 | Extremely High | **Extremely Poor** |
 
 ---
 

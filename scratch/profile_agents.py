@@ -69,6 +69,10 @@ for item in os.listdir(brain_dir):
             target_iter = "iter_4_100k"
         elif item == "cc9e77a3-b5be-4432-904a-ff79acf94679":
             target_iter = "iter_5_100k"
+        elif item == "10c68675-1223-4588-b777-3a24ff9d82cd":
+            target_iter = "iter_7"
+        elif item == "5deba1d3-4466-444b-b0a6-b1d00f607537":
+            target_iter = "iter_6_100k"
             
         # Calculate stats
         valid_steps = []

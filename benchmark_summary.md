@@ -90,6 +90,7 @@ In Phase 3, we built directly upon prior findings and hardware capabilities to p
 | **`iter_5`** | Goal-driven micro-optimization run | 2.20s | 0.02s | **110.0x** | $2.21 \times 10^{-11}$ | 0 | **110.00** |
 | **`iter_6`** | Multicore parallelization (4 P-cores) | 2.20s | 0.006s | **366.7x** | $2.21 \times 10^{-11}$ | 0 | **366.70** |
 | **`iter_blank_1`** | Developed entirely from scratch | 2.20s | 0.016s | **138.8x** | $2.21 \times 10^{-11}$ | 0 | **138.80** |
+| **`iter_7`** | Register Blocking & OpenMP load balancing | 2.20s | 0.012s | **183.3x** | $2.21 \times 10^{-11}$ | 0 | **183.30** |
 
 ### Implementation and Engineering Highlights
 
@@ -115,6 +116,10 @@ In Phase 3, we built directly upon prior findings and hardware capabilities to p
 * **Cache Alignment & Coalescing:** The agent resolved the 4KB cache aliasing conflict. By grouping all 10 flat SoA arrays into a single, continuous 64-byte aligned memory block, it minimized cache conflict misses, allowing maximum data throughput.
 * **Result:** Reached **15.85 milliseconds (0.016s)** execution time, fully satisfying the Iteration 5 comparison goal (~20ms).
 
+#### Iteration 7: Register Blocking & OpenMP Load Balancing (ML Exploration)
+* **Register Blocking & OpenMP Balancing:** Synthesized the multicore OpenMP SPMD kernel from `iter_6` by unrolling the target loops by 2 (calculating force for two target particles simultaneously to halve vector loads of the source particle arrays) and balancing OpenMP static thread chunk boundaries. Stack canaries were disabled (`-fno-stack-protector`) to free up registers. It ran in **11.85 milliseconds** (a **183.3x speedup**).
+* **ML Feasibility Study:** The agent researched machine learning models for chaotic N-body simulations and concluded that pure ML models fail physical validations due to chaotic exponential error growth ($\Delta E \le 10^{-5}$ drift limits), while hybrid corrections introduce double the runtime overhead, making hardware-vectorized C++ direct summation the most speed-efficient and physics-compliant method.
+
 ---
 
 ## 6. Codebase Evolution: Complexity vs. Readability
@@ -133,6 +138,7 @@ As performance increased from the baseline to `iter_6`, the code progressed from
 | **`iter_5`** | Single (`float`) | SoA (16-padded) | AVX2 Intrinsics (`__m256`) | C++17 `std::from_chars` & `std::to_chars` | 388 | Extremely High | **Extremely Poor** |
 | **`iter_6`** | Single (`float`) | SoA (16-padded) | AVX2 Intrinsics (`__m256`) + OpenMP SPMD | C++17 `std::from_chars` & `std::to_chars` | 424 | Extremely High | **Extremely Poor** |
 | **`iter_blank_1`** | Single (`float`) | SoA (Aligned Consolidated Block) | AVX2 Intrinsics (`__m256`) | C++17 `std::from_chars` & `std::to_chars` | 602 | Extremely High | **Extremely Poor** |
+| **`iter_7`** | Single (`float`) | SoA (16-padded) | AVX2 Intrinsics (`__m256`) + OpenMP SPMD | C++17 `std::from_chars` & `std::to_chars` | 486 | Extremely High | **Extremely Poor** |
 
 ### Codebase Breakdown
 
@@ -144,6 +150,7 @@ As performance increased from the baseline to `iter_6`, the code progressed from
 * **nbody.cpp [iter_5]:** Strips all duplicate physics validation functions, fuses Velocity Verlet steps, and replaces all standard I/O streams and library parsing with ultra-fast C++17 `std::from_chars` and `std::to_chars` block-buffered parsing.
 * **nbody.cpp [iter_6]:** Restructures execution into a Single Parallel Region (SPMD) wrapped in an `#pragma omp parallel` block. Threads partition loop ranges statically to avoid false sharing and coordinate using internal barriers, running parallel AVX2 math on 4 Performance cores.
 * **nbody.cpp [iter_blank_1]:** Written entirely from scratch (602 lines). Implements a consolidated 64-byte aligned SoA memory block to completely eliminate 4KB cache aliasing conflict misses. Features hand-coded AVX2 intrinsics and C++17 buffer-to-buffer fast string parsers and writers.
+* **nbody.cpp [iter_7]:** Extends `iter_6` by implementing outer-loop register blocking (unrolling target loops by 2 to minimize source vector loads) and balancing thread chunk distributions. Includes a complete feasibility analysis report on ML models for chaotic simulations.
 
 ---
 
